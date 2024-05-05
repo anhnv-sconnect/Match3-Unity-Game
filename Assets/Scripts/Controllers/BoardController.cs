@@ -1,9 +1,11 @@
 ﻿using DG.Tweening;
+using DG.Tweening.Core.Easing;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static NormalItem;
 
 public class BoardController : MonoBehaviour
 {
@@ -12,7 +14,6 @@ public class BoardController : MonoBehaviour
     public bool IsBusy { get; private set; }
 
     private Board m_board;
-
     private GameManager m_gameManager;
 
     private bool m_isDragging;
@@ -30,7 +31,7 @@ public class BoardController : MonoBehaviour
     private bool m_hintIsShown;
 
     private bool m_gameOver;
-
+    private eNormalType[][] cachedBoard;
     public void StartGame(GameManager gameManager, GameSettings gameSettings)
     {
         m_gameManager = gameManager;
@@ -42,13 +43,22 @@ public class BoardController : MonoBehaviour
         m_cam = Camera.main;
 
         m_board = new Board(this.transform, gameSettings);
-
+        
         Fill();
     }
 
     private void Fill()
     {
+        m_board.CreateCacheBoard();
         m_board.Fill();
+        FindMatchesAndCollapse();
+        cachedBoard = m_board.cachedBoard;
+    }
+
+    public void FillCachedBoard()
+    {
+        m_board = new Board(this.transform, m_gameSettings);
+        m_board.FillCachedBoard(cachedBoard);
         FindMatchesAndCollapse();
     }
 

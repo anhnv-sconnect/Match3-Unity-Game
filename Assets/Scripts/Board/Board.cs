@@ -26,6 +26,8 @@ public class Board
 
     private int m_matchMin;
     private SkinDataSO skinData;
+    public eNormalType[][] cachedBoard;
+    private bool isCacheBoard;
 
     public Board(Transform transform, GameSettings gameSettings)
     {
@@ -82,10 +84,61 @@ public class Board
         return skinData.Skin[id];
     }
 
+    internal void FillCachedBoard(eNormalType[][] cachedBoard)
+    {
+        for (int x = 0; x < boardSizeX; x++)
+        {
+            for (int y = 0; y < boardSizeY; y++)
+            {
+                Cell cell = m_cells[x, y];
+                NormalItem item = new NormalItem();
+
+                List<NormalItem.eNormalType> types = new List<NormalItem.eNormalType>();
+                if (cell.NeighbourBottom != null)
+                {
+                    NormalItem nitem = cell.NeighbourBottom.Item as NormalItem;
+                    if (nitem != null)
+                    {
+                        types.Add(nitem.ItemType);
+                    }
+                }
+
+                if (cell.NeighbourLeft != null)
+                {
+                    NormalItem nitem = cell.NeighbourLeft.Item as NormalItem;
+                    if (nitem != null)
+                    {
+                        types.Add(nitem.ItemType);
+                    }
+                }
+
+                var type = cachedBoard[x][y];
+                item.SetType(type);
+                item.SetView();
+                item.ChangeSkin(OrderSkin(type));
+                item.SetViewRoot(m_root);
+
+                cell.Assign(item);
+                cell.ApplyItemPosition(false);
+            }
+        }
+    }
+
+    internal void CreateCacheBoard()
+    {
+        isCacheBoard = true;
+        cachedBoard = new eNormalType[boardSizeX][];
+    }
+
     internal void Fill()
     {
         for (int x = 0; x < boardSizeX; x++)
         {
+            if(isCacheBoard)
+            {
+                cachedBoard[x] = Enum.GetValues(typeof(eNormalType)).Cast<eNormalType>().ToArray();
+                Debug.Log("CachedBoard: " + cachedBoard[x].Length);
+            }
             for (int y = 0; y < boardSizeY; y++)
             {
                 Cell cell = m_cells[x, y];
@@ -118,8 +171,15 @@ public class Board
 
                 cell.Assign(item);
                 cell.ApplyItemPosition(false);
+
+                if(isCacheBoard)
+                {
+                    cachedBoard[x][y] = type;
+                    Debug.Log("CachedBOard: " + type);
+                }
             }
         }
+        isCacheBoard = false;
     }
 
     internal void Shuffle()
