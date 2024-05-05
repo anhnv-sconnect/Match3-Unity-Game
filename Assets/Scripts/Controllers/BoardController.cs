@@ -157,6 +157,7 @@ public class BoardController : MonoBehaviour
             List<Cell> matches = new List<Cell>();
             matches.AddRange(cells1);
             matches.AddRange(cells2);
+
             matches = matches.Distinct().ToList();
 
             if (matches.Count < m_gameSettings.MatchesMin)

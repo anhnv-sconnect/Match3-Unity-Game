@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static NormalItem;
 
 public class Board
 {
@@ -24,6 +25,7 @@ public class Board
     private Transform m_root;
 
     private int m_matchMin;
+    private SkinDataSO skinData;
 
     public Board(Transform transform, GameSettings gameSettings)
     {
@@ -43,6 +45,8 @@ public class Board
     {
         Vector3 origin = new Vector3(-boardSizeX * 0.5f + 0.5f, -boardSizeY * 0.5f + 0.5f, 0f);
         GameObject prefabBG = Resources.Load<GameObject>(Constants.PREFAB_CELL_BACKGROUND);
+        skinData = Resources.Load<SkinDataSO>(Constants.SKIN_DATA_SO);
+
         for (int x = 0; x < boardSizeX; x++)
         {
             for (int y = 0; y < boardSizeY; y++)
@@ -70,6 +74,12 @@ public class Board
             }
         }
 
+    }
+    public Sprite OrderSkin(eNormalType type)
+    {
+        var id = (int)type;
+
+        return skinData.Skin[id];
     }
 
     internal void Fill()
@@ -100,8 +110,10 @@ public class Board
                     }
                 }
 
-                item.SetType(Utils.GetRandomNormalTypeExcept(types.ToArray()));
+                var type = Utils.GetRandomNormalTypeExcept(types.ToArray());
+                item.SetType(type);
                 item.SetView();
+                item.ChangeSkin(OrderSkin(type));
                 item.SetViewRoot(m_root);
 
                 cell.Assign(item);
@@ -147,8 +159,10 @@ public class Board
 
                 NormalItem item = new NormalItem();
 
-                item.SetType(Utils.GetRandomNormalType());
+                var type = Utils.GetRandomNormalType();
+                item.SetType(type);
                 item.SetView();
+                item.ChangeSkin(OrderSkin(type));
                 item.SetViewRoot(m_root);
 
                 cell.Assign(item);
@@ -413,7 +427,7 @@ public class Board
 
                 if (cell.NeighbourRight != null)
                 {
-                    result = GetPotentialMatch(cell, cell.NeighbourRight, cell.NeighbourRight.NeighbourRight);
+                    result = GetPotentialMatch(cell, cell.NeighbourRight, cell.NeighbourRight.NeighbourRight).ToList();
                     if (result.Count > 0)
                     {
                         break;
@@ -430,7 +444,7 @@ public class Board
                 \* example  */
                 if (cell.NeighbourUp != null)
                 {
-                    result = GetPotentialMatch(cell, cell.NeighbourUp, cell.NeighbourUp.NeighbourUp);
+                    result = GetPotentialMatch(cell, cell.NeighbourUp, cell.NeighbourUp.NeighbourUp).ToList();
                     if (result.Count > 0)
                     {
                         break;
@@ -447,7 +461,7 @@ public class Board
                 \* example  */
                 if (cell.NeighbourBottom != null)
                 {
-                    result = GetPotentialMatch(cell, cell.NeighbourBottom, cell.NeighbourBottom.NeighbourBottom);
+                    result = GetPotentialMatch(cell, cell.NeighbourBottom, cell.NeighbourBottom.NeighbourBottom).ToList();
                     if (result.Count > 0)
                     {
                         break;
@@ -464,7 +478,7 @@ public class Board
                 \* example  */
                 if (cell.NeighbourLeft != null)
                 {
-                    result = GetPotentialMatch(cell, cell.NeighbourLeft, cell.NeighbourLeft.NeighbourLeft);
+                    result = GetPotentialMatch(cell, cell.NeighbourLeft, cell.NeighbourLeft.NeighbourLeft).ToList();
                     if (result.Count > 0)
                     {
                         break;
@@ -519,22 +533,18 @@ public class Board
         return result;
     }
 
-    private List<Cell> GetPotentialMatch(Cell cell, Cell neighbour, Cell target)
+    private IEnumerable<Cell> GetPotentialMatch(Cell cell, Cell neighbour, Cell target)
     {
-        List<Cell> result = new List<Cell>();
-
         if (neighbour != null && neighbour.IsSameType(cell))
         {
             Cell third = LookForTheThirdCell(target, neighbour);
             if (third != null)
             {
-                result.Add(cell);
-                result.Add(neighbour);
-                result.Add(third);
+                yield return cell;
+                yield return neighbour;
+                yield return third;
             }
         }
-
-        return result;
     }
 
     private Cell LookForTheSecondCellHorizontal(Cell target, Cell main)
@@ -543,15 +553,13 @@ public class Board
         if (target.IsSameType(main)) return null;
 
         //look right
-        Cell second = null;
-        second = target.NeighbourRight;
+        Cell second = target.NeighbourRight;
         if (second != null && second.IsSameType(main))
         {
             return second;
         }
 
         //look left
-        second = null;
         second = target.NeighbourLeft;
         if (second != null && second.IsSameType(main))
         {

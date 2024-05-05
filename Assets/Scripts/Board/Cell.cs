@@ -1,5 +1,7 @@
 ﻿using System;
+using UnityEditor;
 using UnityEngine;
+using static NormalItem;
 
 public class Cell : MonoBehaviour
 {
@@ -25,7 +27,6 @@ public class Cell : MonoBehaviour
         this.BoardX = cellX;
         this.BoardY = cellY;
     }
-
     public bool IsNeighbour(Cell other)
     {
         return BoardX == other.BoardX && Mathf.Abs(BoardY - other.BoardY) == 1 ||

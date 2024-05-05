@@ -52,6 +52,10 @@ public class NormalItem : Item
 
         return prefabname;
     }
+    public void ChangeSkin(Sprite sprite)
+    {
+        View.GetComponent<SpriteRenderer>().sprite = sprite;
+    }
 
     internal override bool IsSameType(Item other)
     {
