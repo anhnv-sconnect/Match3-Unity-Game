@@ -18,7 +18,6 @@ public class UIPanelRestart : MonoBehaviour, IMenu
 
     public void Show()
     {
-        Debug.Log("Showing");
         gameObject.SetActive(true);
 
         blurImg.DOKill();

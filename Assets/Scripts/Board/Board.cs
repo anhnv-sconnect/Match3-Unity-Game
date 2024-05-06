@@ -1,4 +1,5 @@
 ﻿using DG.Tweening;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -26,6 +27,7 @@ public class Board
 
     private int m_matchMin;
     private SkinDataSO skinData;
+    private GameObject[] itemViewData;
     public eNormalType[][] cachedBoard;
     private bool isCacheBoard;
 
@@ -137,7 +139,6 @@ public class Board
             if(isCacheBoard)
             {
                 cachedBoard[x] = Enum.GetValues(typeof(eNormalType)).Cast<eNormalType>().ToArray();
-                Debug.Log("CachedBoard: " + cachedBoard[x].Length);
             }
             for (int y = 0; y < boardSizeY; y++)
             {
@@ -175,8 +176,9 @@ public class Board
                 if(isCacheBoard)
                 {
                     cachedBoard[x][y] = type;
-                    Debug.Log("CachedBOard: " + type);
                 }
+
+             //   Debug.Log($"Cell[{x}][{y}]: {type}");
             }
         }
         isCacheBoard = false;
@@ -207,19 +209,81 @@ public class Board
         }
     }
 
-
-    internal void FillGapsWithNewItems()
+    IEnumerable<eNormalType> FindAroundItem()
     {
+        var aroundEmptyCell = new List<eNormalType>();
+        var cellCollection = new Dictionary<eNormalType, int>();
         for (int x = 0; x < boardSizeX; x++)
         {
             for (int y = 0; y < boardSizeY; y++)
             {
                 Cell cell = m_cells[x, y];
+                var normalDownItem = cell.NeighbourBottom != null ? cell.NeighbourBottom.Item as NormalItem : null;
+                var normalLeftItem = cell.NeighbourLeft != null ? cell.NeighbourLeft.Item as NormalItem : null;
+                var normalRightItem = cell.NeighbourRight != null ? cell.NeighbourRight.Item as NormalItem : null;
+                var normalUpItem = cell.NeighbourUp != null ? cell.NeighbourUp.Item as NormalItem : null;
+
+                // Find the normalItem around Cell is Playing
+                if (cell.IsEmpty)
+                {
+                    if (normalDownItem != null)
+                        aroundEmptyCell.Add(normalDownItem.ItemType);
+                    if (normalLeftItem != null)
+                        aroundEmptyCell.Add(normalLeftItem.ItemType);
+                    if (normalRightItem != null)
+                        aroundEmptyCell.Add(normalRightItem.ItemType);
+                    if (normalUpItem != null)
+                        aroundEmptyCell.Add(normalUpItem.ItemType);
+                }
+                else
+                {
+                    var normalItem = cell.Item as NormalItem;
+                    if(normalItem != null)
+                    {
+                        if (cellCollection.ContainsKey(normalItem.ItemType)) { cellCollection[normalItem.ItemType]++; }
+                        else { cellCollection.Add(normalItem.ItemType, 0); }
+                    }
+                }
+            }
+        }
+
+        foreach (var item in aroundEmptyCell)
+        {
+            cellCollection.Remove(item);
+        }
+
+        for (int i = 0; i < 3; i++)
+        {
+           // var rd = Utils.GetRandomNormalType();
+            var leastAmountItem = cellCollection.Aggregate((l, r) => l.Value < r.Value ? l : r).Key;
+            cellCollection[leastAmountItem]++;
+         //   while (aroundEmptyCell.Contains(rd))
+         //   {
+         //       rd = Utils.GetRandomNormalType();
+          //  }
+            yield return leastAmountItem;
+        }
+    }
+
+    internal void FillGapsWithNewItems()
+    {
+        var cellTypes = FindAroundItem().ToArray();
+
+        var count = 0;
+        for (int x = 0; x < boardSizeX; x++)
+        {
+            for (int y = 0; y < boardSizeY; y++)
+            {
+
+                Cell cell = m_cells[x, y];
                 if (!cell.IsEmpty) continue;
 
                 NormalItem item = new NormalItem();
 
-                var type = Utils.GetRandomNormalType();
+                var type = cellTypes[count];
+                count++;
+             //   var type = Utils.GetRandomNormalType();
+
                 item.SetType(type);
                 item.SetView();
                 item.ChangeSkin(OrderSkin(type));
